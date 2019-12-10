@@ -1,0 +1,14 @@
+<?xml version="1.0"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2011/08/nuspec.xsd">
+  <metadata>
+    <id>PoshProgressBar</id>
+    <version>0.132</version>
+    <authors>Micah Rairdon</authors>
+    <owners>Unknown</owners>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <description>A module for creating WPF progress bars using XAML and the Material Design Toolkit by Butchers Boy</description>
+    <releaseNotes />
+    <copyright>(c) 2015 Micah Rairdon. All rights reserved.</copyright>
+    <tags>PSModule PSIncludes_Function PSFunction_New-ProgressBar PSFunction_Write-ProgressBar PSFunction_Close-ProgressBar PSCommand_New-ProgressBar PSCommand_Write-ProgressBar PSCommand_Close-ProgressBar</tags>
+  </metadata>
+</package>
