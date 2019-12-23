@@ -33,11 +33,11 @@ function Get-MSIInstaller {
                         $ScriptBlock = { 
                             $Out += Get-ChildItem -Path "Registry::\HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\" -ErrorAction SilentlyContinue | 
                                 Get-ItemProperty |  
-                                Where-Object -FilterScript { ($_.DisplayName) -and ($_.DisplayName -like "*$Name*") }
+                                Where-Object -FilterScript { ($_.DisplayName) -and ($_.DisplayName -like "*$Using:Name*") }
 
                             $Out += Get-ChildItem -Path "Registry::\HKEY_LOCAL_MACHINE\SOFTWARE\Wow6432node\Microsoft\Windows\CurrentVersion\Uninstall" -ErrorAction SilentlyContinue |
                                 Get-ItemProperty |  
-                                Where-Object -FilterScript { ($_.DisplayName) -and ($_.DisplayName -like "*$Name*") }
+                                Where-Object -FilterScript { ($_.DisplayName) -and ($_.DisplayName -like "*$Using:Name*") }
 
                             
                             $Out | Select-Object -Property DisplayName, InstallLocation, DisplayVersion, UninstallString -Unique | Sort-Object -Property DisplayName
