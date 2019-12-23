@@ -41,12 +41,20 @@ function Find-Printer
                     PrinterName = $null
                     DriverName = $null
                     Location = $null
+                    ComputerName = $null
                 }
                 $Output = New-Object PSObject -Property $Properties
             }
             FINALLY {
-                Write-Output -InputObject $Output | Select-Object @{n="PrinterName";e={"\\" + $_.ComputerName + ".RNR.NET.LOCAL\" + $_.Name}}, DriverName, Location
-                #
+                foreach($o in $Output) {
+                    if($o.ComputerName -eq "PRS-FK-RFK-SV01") {
+                        Write-Output -InputObject $o | Select-Object @{n="PrinterName";e={"\\" + $_.ComputerName + ".FACHKLINIK.NET.LOCAL\" + $_.Name}}, DriverName, Location
+                    }
+                    else {
+                        Write-Output -InputObject $o | Select-Object @{n="PrinterName";e={"\\" + $_.ComputerName + ".RNR.NET.LOCAL\" + $_.Name}}, DriverName, Location
+                    }
+                }
+                
             }
         }
     }
