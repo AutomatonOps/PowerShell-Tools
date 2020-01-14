@@ -67,7 +67,7 @@ function Get-MSIInstaller {
             # $Output.Add((Get-Job -Name $Computer | Receive-Job -Wait -AutoRemoveJob))
 
             Write-Verbose -Message "Performing the operation 'Remove-PSSession' on target $Computer."
-            Get-PSSession -Name $Computer | Remove-PSSession
+            Get-PSSession -Name $Computer -ErrorAction SilentlyContinue | Remove-PSSession
         }
         $Output | ForEach-Object { $_ }
     }
