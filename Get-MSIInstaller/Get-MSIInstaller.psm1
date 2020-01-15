@@ -9,7 +9,7 @@ function Get-MSIInstaller {
 
     [cmdletbinding(SupportsShouldProcess)]
     Param(
-        [parameter(ValueFromPipelineByPropertyName)][string[]]$ComputerName = $env:COMPUTERNAME, 
+        [parameter(ValueFromPipelineByPropertyName)][string[]]$ComputerName = $env:COMPUTERNAME,
         [string]$Name = "*"
     )
 
@@ -30,14 +30,18 @@ function Get-MSIInstaller {
 
                     Write-Verbose -Message "Getting Registry::\HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\ on $Computer"
 
-                        $ScriptBlock = { 
-                            $Out += Get-ChildItem -Path "Registry::\HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\" -ErrorAction SilentlyContinue | 
-                                Get-ItemProperty |  
-                                Where-Object -FilterScript { ($_.DisplayName) -and ($_.DisplayName -like "*$Using:Name*") }
+                        $ScriptBlock = {
+                            $Out += Get-ChildItem -Path "Registry::\HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\" -ErrorAction SilentlyContinue |
+                                Get-ItemProperty |
+                                Where-Object {
+                                    ($_.DisplayName) -and ($_.DisplayName -like "*$Using:Name*") 
+                                }
 
                             $Out += Get-ChildItem -Path "Registry::\HKEY_LOCAL_MACHINE\SOFTWARE\Wow6432node\Microsoft\Windows\CurrentVersion\Uninstall" -ErrorAction SilentlyContinue |
-                                Get-ItemProperty |  
-                                Where-Object -FilterScript { ($_.DisplayName) -and ($_.DisplayName -like "*$Using:Name*") }
+                                Get-ItemProperty |
+                                Where-Object {
+                                    ($_.DisplayName) -and ($_.DisplayName -like "*$Using:Name*") 
+                                }
 
                             
                             $Out | Select-Object -Property DisplayName, InstallLocation, DisplayVersion, UninstallString -Unique | Sort-Object -Property DisplayName
@@ -49,7 +53,7 @@ function Get-MSIInstaller {
                         $Output.Add((Invoke-Command -Session (Get-PSSession -Name $Computer) -ScriptBlock $ScriptBlock)) #-AsJob -JobName $Computer | Out-Null
                     }
                 }
-            }              
+            }
             CATCH {
                 Write-Error -Message $Computer
                 Write-Error -Message $error[0]
