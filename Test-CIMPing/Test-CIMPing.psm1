@@ -10,9 +10,9 @@ function Test-CIMPing {
 
     [cmdletbinding()]
     Param(
-        [parameter(ValueFromPipelineByPropertyName)][string[]]$ComputerName = "localhost",
+        [parameter(ValueFromPipelineByPropertyName)][string[]]$ComputerName = $env:COMPUTERNAME,
         [switch]$Loop = $False,
-        [int32]$Count = 4,
+        [int32]$Count = 1,
         [int32]$Delay = 0,
         [ValidateNotNull()]
         [System.Management.Automation.PSCredential]
