@@ -23,7 +23,7 @@ function Get-MSIInstaller {
             TRY {
                 If ((Test-CIMPing -ComputerName $Computer).Success) {
 
-                    If ((Get-PSSession).Name -notcontains $Computer) {
+                    If (((Get-PSSession).Name -notcontains $Computer) -and ($Computer -ne $env:COMPUTERNAME)) {
                         Write-Verbose -Message "Performing the operation 'New-PSSession' on target $Computer."
                         New-PSSession -ComputerName $Computer -Name $Computer | Out-Null
                     }
@@ -39,7 +39,10 @@ function Get-MSIInstaller {
 
 
                             
-                            $Out | Where-Object {($_.DisplayName) -and ($_.DisplayName -like "*$Using:Name*")} | Select-Object -Property DisplayName, InstallLocation, DisplayVersion, UninstallString -Unique | Sort-Object -Property DisplayName
+                            $Out |
+                                Where-Object {($_.DisplayName) -and ($_.DisplayName -like "*$Using:Name*")} |
+                                    Select-Object -Property DisplayName, InstallLocation, DisplayVersion, UninstallString, @{n="UninstallArgs";e={if($_.UninstallString -like 'MsiExec.exe *'){$_.UninstallString.Split(' ')[1]}}} -Unique |
+                                        Sort-Object -Property DisplayName
 
                             #Write-Output -InputObject $Out
                         }
