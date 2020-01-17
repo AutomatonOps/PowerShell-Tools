@@ -13,58 +13,58 @@ function Get-MSIInstaller {
         [string]$Name = "*"
     )
 
-
-    BEGIN {
-        $Output = [System.Collections.Generic.List[PSObject]]::New()
-    }
-
-    PROCESS {
+    process {
         ForEach ($Computer in $ComputerName) {
-            TRY {
+            try {
                 If ((Test-CIMPing -ComputerName $Computer).Success) {
 
                     Write-Verbose -Message "Getting Registry::\HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\ on $Computer"
 
-                        $ScriptBlock = {
-                            $Out += Get-ChildItem -Path "Registry::\HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\" -ErrorAction SilentlyContinue |
-                                Get-ItemProperty
+                    $ScriptBlock = {
+                        $Out += Get-ChildItem -Path "Registry::\HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\" -ErrorAction SilentlyContinue |
+                            Get-ItemProperty
 
-                            $Out += Get-ChildItem -Path "Registry::\HKEY_LOCAL_MACHINE\SOFTWARE\Wow6432node\Microsoft\Windows\CurrentVersion\Uninstall" -ErrorAction SilentlyContinue |
-                                Get-ItemProperty
+                        $Out += Get-ChildItem -Path "Registry::\HKEY_LOCAL_MACHINE\SOFTWARE\Wow6432node\Microsoft\Windows\CurrentVersion\Uninstall" -ErrorAction SilentlyContinue |
+                            Get-ItemProperty
 
 
-                            
-                            $Out |
-                                Where-Object {($_.DisplayName) -and ($_.DisplayName -like "*$Using:Name*")} |
-                                    Select-Object -Property DisplayName, InstallLocation, DisplayVersion, UninstallString, @{n="UninstallArgs";e={if($_.UninstallString -like 'MsiExec.exe *'){$_.UninstallString.Split(' ')[1]}}} -Unique |
-                                        Sort-Object -Property DisplayName
+                                
+                        $Out |
+                            Where-Object { ($_.DisplayName) -and ($_.DisplayName -like "*$Using:Name*") } |
+                                Select-Object -Property *, @{n = "UninstallArgs"; e = { if ($_.UninstallString -like 'MsiExec.exe *') { $_.UninstallString.Split(' ')[1] } } } -Unique |
+                                    Sort-Object -Property DisplayName
+                    }
 
-                            #Write-Output -InputObject $Out
-                        }
+                    $ScriptBlockLocal = {
+                        $Out += Get-ChildItem -Path "Registry::\HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\" -ErrorAction SilentlyContinue |
+                            Get-ItemProperty
+
+                        $Out += Get-ChildItem -Path "Registry::\HKEY_LOCAL_MACHINE\SOFTWARE\Wow6432node\Microsoft\Windows\CurrentVersion\Uninstall" -ErrorAction SilentlyContinue |
+                            Get-ItemProperty
+
+
+                                
+                        $Out |
+                            Where-Object { ($_.DisplayName) -and ($_.DisplayName -like "*$Name*") } |
+                                Select-Object -Property *, @{n = "UninstallArgs"; e = { if ($_.UninstallString -like 'MsiExec.exe *') { $_.UninstallString.Split(' ')[1] } } } -Unique |
+                                    Sort-Object -Property DisplayName
+                    }
 
                     if ($PSCmdlet.ShouldProcess("$Computer", "Get MSI Installer")) {
-                        if($Computer -eq $env:COMPUTERNAME) {
-                            $Output.Add((Invoke-Command -ScriptBlock $ScriptBlock))
+                        if ($Computer -eq $env:COMPUTERNAME) {
+                            Invoke-Command -ScriptBlock $ScriptBlockLocal
                         }
                         else {
-                            $Output.Add((Invoke-Command -ComputerName $Computer -ScriptBlock $ScriptBlock)) #-AsJob -JobName $Computer | Out-Null
+                            Invoke-Command -ComputerName $Computer -ScriptBlock $ScriptBlock #-AsJob -JobName $Computer | Out-Null
                         }
                     }
                 }
             }
-            CATCH {
-                Write-Error -Message $Computer
-                Write-Error -Message $error[0]
-                #Write-Warning "Konnte nicht mit $Computer verbinden."
-            }
-            FINALLY {
-                #Write-Output $WMI
+            catch {
+                Write-Host "Something went wrong."
+                Write-Host $error[0]
             }
         }
-    }
-
-    END {
-        $Output | ForEach-Object { $_ }
     }
 }
 
