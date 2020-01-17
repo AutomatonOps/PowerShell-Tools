@@ -23,11 +23,6 @@ function Get-MSIInstaller {
             TRY {
                 If ((Test-CIMPing -ComputerName $Computer).Success) {
 
-                    If (((Get-PSSession).Name -notcontains $Computer) -and ($Computer -ne $env:COMPUTERNAME)) {
-                        Write-Verbose -Message "Performing the operation 'New-PSSession' on target $Computer."
-                        New-PSSession -ComputerName $Computer -Name $Computer | Out-Null
-                    }
-
                     Write-Verbose -Message "Getting Registry::\HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\ on $Computer"
 
                         $ScriptBlock = {
@@ -48,7 +43,7 @@ function Get-MSIInstaller {
                         }
 
                     if ($PSCmdlet.ShouldProcess("$Computer", "Get MSI Installer")) {
-                        $Output.Add((Invoke-Command -Session (Get-PSSession -Name $Computer) -ScriptBlock $ScriptBlock)) #-AsJob -JobName $Computer | Out-Null
+                        $Output.Add((Invoke-Command -ComputerName $Computer -ScriptBlock $ScriptBlock)) #-AsJob -JobName $Computer | Out-Null
                     }
                 }
             }
@@ -64,13 +59,6 @@ function Get-MSIInstaller {
     }
 
     END {
-        ForEach ($Computer in (Get-PSSession | Select-Object -ExpandProperty ComputerName)) {
-            # Write-Verbose -Message "Performing the operation 'Receive-Job -Wait' on target $Computer."
-            # $Output.Add((Get-Job -Name $Computer | Receive-Job -Wait -AutoRemoveJob))
-
-            Write-Verbose -Message "Performing the operation 'Remove-PSSession' on target $Computer."
-            Get-PSSession -Name $Computer -ErrorAction SilentlyContinue | Remove-PSSession
-        }
         $Output | ForEach-Object { $_ }
     }
 }
