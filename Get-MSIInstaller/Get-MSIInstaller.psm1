@@ -43,7 +43,12 @@ function Get-MSIInstaller {
                         }
 
                     if ($PSCmdlet.ShouldProcess("$Computer", "Get MSI Installer")) {
-                        $Output.Add((Invoke-Command -ComputerName $Computer -ScriptBlock $ScriptBlock)) #-AsJob -JobName $Computer | Out-Null
+                        if($Computer -eq $env:COMPUTERNAME) {
+                            $Output.Add((Invoke-Command -ScriptBlock $ScriptBlock))
+                        }
+                        else {
+                            $Output.Add((Invoke-Command -ComputerName $Computer -ScriptBlock $ScriptBlock)) #-AsJob -JobName $Computer | Out-Null
+                        }
                     }
                 }
             }
