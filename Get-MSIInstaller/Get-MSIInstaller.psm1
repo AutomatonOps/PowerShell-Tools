@@ -16,7 +16,7 @@ function Get-MSIInstaller {
     process {
         ForEach ($Computer in $ComputerName) {
             try {
-                If ((Test-CIMPing -ComputerName $Computer).Success) {
+                #If ((Test-CIMPing -ComputerName $Computer).Success) {
 
                     Write-Verbose -Message "Getting Registry::\HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\ on $Computer"
 
@@ -58,7 +58,7 @@ function Get-MSIInstaller {
                             Invoke-Command -ComputerName $Computer -ScriptBlock $ScriptBlock #-AsJob -JobName $Computer | Out-Null
                         }
                     }
-                }
+                #}
             }
             catch {
                 Write-Host "Something went wrong."
