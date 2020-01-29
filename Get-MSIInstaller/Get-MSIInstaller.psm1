@@ -10,15 +10,15 @@ function Get-MSIInstaller {
     [cmdletbinding(SupportsShouldProcess)]
     Param(
         [parameter(ValueFromPipelineByPropertyName)][string[]]$ComputerName = $env:COMPUTERNAME,
-        [string]$Name = "*"
+        [string[]]$Name = "*"
     )
 
     process {
         ForEach ($Computer in $ComputerName) {
             try {
-                #If ((Test-CIMPing -ComputerName $Computer).Success) {
-
                     Write-Verbose -Message "Getting Registry::\HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\ on $Computer"
+
+                foreach($N in $Name) {
 
                     $ScriptBlock = {
                         $Out += Get-ChildItem -Path "Registry::\HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\" -ErrorAction SilentlyContinue |
@@ -30,7 +30,7 @@ function Get-MSIInstaller {
 
                                 
                         $Out |
-                            Where-Object { ($_.DisplayName) -and ($_.DisplayName -like "*$Using:Name*") } |
+                            Where-Object { ($_.DisplayName) -and ($_.DisplayName -like "*$Using:N*") } |
                                 Select-Object -Property *, @{n = "UninstallArgs"; e = { if ($_.UninstallString -like 'MsiExec.exe *') { $_.UninstallString.Split(' ')[1] } } } -Unique |
                                     Sort-Object -Property DisplayName
                     }
@@ -45,7 +45,7 @@ function Get-MSIInstaller {
 
                                 
                         $Out |
-                            Where-Object { ($_.DisplayName) -and ($_.DisplayName -like "*$Name*") } |
+                            Where-Object { ($_.DisplayName) -and ($_.DisplayName -like "*$N*") } |
                                 Select-Object -Property *, @{n = "UninstallArgs"; e = { if ($_.UninstallString -like 'MsiExec.exe *') { $_.UninstallString.Split(' ')[1] } } } -Unique |
                                     Sort-Object -Property DisplayName
                     }
@@ -58,7 +58,8 @@ function Get-MSIInstaller {
                             Invoke-Command -ComputerName $Computer -ScriptBlock $ScriptBlock #-AsJob -JobName $Computer | Out-Null
                         }
                     }
-                #}
+
+                }
             }
             catch {
                 Write-Host "Something went wrong."
