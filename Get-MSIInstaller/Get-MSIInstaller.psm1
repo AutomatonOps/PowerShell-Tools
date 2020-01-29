@@ -31,7 +31,7 @@ function Get-MSIInstaller {
                                 
                         $Out |
                             Where-Object { ($_.DisplayName) -and ($_.DisplayName -like "*$Using:N*") } |
-                                Select-Object -Property *, @{n = "UninstallArgs"; e = { if ($_.UninstallString -like 'MsiExec.exe *') { $_.UninstallString.Split(' ')[1] } } } -Unique |
+                                Select-Object -Property *, @{n = "UninstallArgs"; e = { if ($_.UninstallString -like 'MsiExec.exe *') { ($_.UninstallString.Split(' ')[1]).Replace("/I", "/X") } } } -Unique |
                                     Sort-Object -Property DisplayName
                     }
 
@@ -46,7 +46,7 @@ function Get-MSIInstaller {
                                 
                         $Out |
                             Where-Object { ($_.DisplayName) -and ($_.DisplayName -like "*$N*") } |
-                                Select-Object -Property *, @{n = "UninstallArgs"; e = { if ($_.UninstallString -like 'MsiExec.exe *') { $_.UninstallString.Split(' ')[1] } } } -Unique |
+                                Select-Object -Property *, @{n = "UninstallArgs"; e = { if ($_.UninstallString -like 'MsiExec.exe *') { $_.UninstallString.Split(' ')[1].Replace("/I", "/X") } } } -Unique |
                                     Sort-Object -Property DisplayName
                     }
 
