@@ -7,9 +7,9 @@ function Get-MSIInstaller {
     #>
 
 
-    [cmdletbinding(SupportsShouldProcess)]
+    [cmdletbinding(SupportsShouldProcess=$true)]
     Param(
-        [parameter(ValueFromPipelineByPropertyName)][string[]]$ComputerName = $env:COMPUTERNAME,
+        [parameter(ValueFromPipelineByPropertyName=$true)][string[]]$ComputerName = $env:COMPUTERNAME,
         [string[]]$Name = "*"
     )
 
