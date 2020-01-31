@@ -1,10 +1,10 @@
-function Test-CIMPing {
+function Test-CimPing {
     <#
     .SYNOPSIS
-        Pings a list of ComputerNames using CIM
+        Pings a list of ComputerNames using Cim
         If no -ComputerName is provided it will default to the localhost.
     .EXAMPLE
-        Test-CIMPing -ComputerName localhost -Loop
+        Test-CimPing -ComputerName localhost -Loop
     #>
 
 
@@ -12,6 +12,7 @@ function Test-CIMPing {
     Param(
         [parameter(ValueFromPipelineByPropertyName)][string[]]$ComputerName = $env:COMPUTERNAME,
         [switch]$Loop = $False,
+        [switch]$Wait = $False,
         [int32]$Count = 1,
         [int32]$Delay = 0,
         [ValidateNotNull()]
@@ -21,7 +22,7 @@ function Test-CIMPing {
     )
 
     process {
-        while($Loop -or $Count) {
+        while($Loop -or $Count -or $Wait) {
             foreach($Computer in $ComputerName) {
                 try {
                     $Res = Get-CimInstance -ClassName Win32_PingStatus -Filter "Address='$Computer' AND Timeout=1000"
@@ -39,7 +40,15 @@ function Test-CIMPing {
                     $error[0]
                 }
                 finally {
-                    Write-Output $Res | Select-Object ComputerName, ResponseTime, Success, TimeStamp
+                    if(($Wait)) {
+                        if(($Res.Success)) {
+                            Write-Output $Res | Select-Object ComputerName, ResponseTime, Success, TimeStamp
+                        }
+                    }
+                    else {
+                        Write-Output $Res | Select-Object ComputerName, ResponseTime, Success, TimeStamp
+                    }
+
                 }
             }
             $Count -= 1
