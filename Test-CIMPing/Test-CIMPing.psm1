@@ -14,7 +14,7 @@ function Test-CimPing {
         [switch]$Loop = $False,
         [switch]$Wait = $False,
         [int32]$Count = 1,
-        [int32]$Delay = 0,
+        [int32]$Delay = 1,
         [ValidateNotNull()]
         [System.Management.Automation.PSCredential]
         [System.Management.Automation.Credential()]
