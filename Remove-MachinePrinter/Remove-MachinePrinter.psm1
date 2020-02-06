@@ -10,73 +10,58 @@ function Remove-MachinePrinter {
 
     [cmdletbinding(SupportsShouldProcess)]
     Param(
-        [parameter(ValueFromPipelineByPropertyName)][string[]]$ComputerName = "localhost",
+        [parameter(ValueFromPipelineByPropertyName, ParameterSetName = 'ComputerName')][string[]]$ComputerName = $env:COMPUTERNAME,
 
-        [parameter(Mandatory, ValueFromPipelineByPropertyName)][string[]]$PrinterName
+        [parameter(ValueFromPipelineByPropertyName, ParameterSetName = 'PSSession', Mandatory = $true)][System.Management.Automation.Runspaces.PSSession[]]$Session,
+
+        [parameter(ValueFromPipelineByPropertyName, Mandatory = $true)][string[]]$PrinterName
     )
 
-    BEGIN {
-        $Output = [System.Collections.Generic.List[PSObject]]::New()
-    }
 
-    PROCESS {
-        ForEach ($Computer in $ComputerName) {
-            TRY {
-                If ((Test-CIMPing -ComputerName $Computer).Success) {
-
-                    If ((Get-PSSession).ComputerName -notcontains $Computer) {
-                        Write-Verbose -Message "Performing the operation 'New-PSSession' on target $Computer."
-                        New-PSSession -ComputerName $Computer -Name $Computer | Out-Null
-                    }
-
-                    ForEach ($Printer in $PrinterName) {
+    process {
+        if ($PSCmdlet.ParameterSetName -eq 'ComputerName') {
+            foreach ($Computer in $ComputerName) {
+                try {
+                    foreach ($Printer in $PrinterName) {
                         $ScriptBlock = {
-                            Start-Process -FilePath rundll32.exe -ArgumentList "printui,PrintUIEntry /gd /n$Using:Printer" -Wait
-                        }#scriptblock
-
-                        if ($PSCmdlet.ShouldProcess("$Computer", "Remove Machine Printer $PrinterName")) {
-                            $Output.Add((Invoke-Command -Session (Get-PSSession -Name $Computer) -ScriptBlock $ScriptBlock)) #-AsJob -JobName $Computer | Out-Null
-                            $Properties = @{
-                                ComputerName = $Computer
-                                PrinterName  = $Printer
-                                Status       = "Online"
-                            }
-                            $Output.Add((New-Object PSCustomObject -Property $Properties))
-                        }#shouldprocess
+                            Start-Process -FilePath rundll32.exe -ArgumentList "printui,PrintUIEntry /q /gd /n$Using:Printer" -Wait
+                        }
+                        if ($PSCmdlet.ShouldProcess($Computer, "Remove Machine Printer $Printer")) {
+                            Invoke-Command -ComputerName $Computer -ScriptBlock $ScriptBlock
+                        }
                     }
-                }#test-cimping
-                Else {
-                    $Properties = @{
-                        ComputerName = $Computer
-                        PrinterName  = $PrinterName
-                        Status       = "Offline"
-                    }
-                    $Output.Add((New-Object PSCustomObject -Property $Properties))
-                }  
-            }#try
-            CATCH {
-                Write-Host "Error! ${$_.Exception.Message}"
-                $Properties = @{
-                    ComputerName = $Computer
-                    PrinterName  = $PrinterName
-                    Status       = $_.Exception.Message
                 }
-                $Output.Add((New-Object PSCustomObject -Property $Properties))
-            }#catch
-            FINALLY {
+                catch {
+                    $error[0].InvocationInfo | Select-Object *
+                    $error[0].Exception.Message
+                }
             }
-        }#foreach()
-    }#process
-    
-    END {
-        ForEach ($Computer in (Get-PSSession | Select-Object -ExpandProperty ComputerName)) {
-            # Write-Verbose -Message "Performing the operation 'Receive-Job -Wait' on target $Computer."
-            # $Output.Add((Get-Job -Name $Computer | Receive-Job -Wait -AutoRemoveJob))
-
-            Write-Verbose -Message "Performing the operation 'Remove-PSSession' on target $Computer."
-            Get-PSSession -Name $Computer | Remove-PSSession
         }
-        $Output | ForEach-Object { $_ | Select-Object -Property ComputerName, UserName, PrinterName, Type | Select-Object -Property * -Unique }
+        else {
+            foreach ($PSSession in $Session) {
+                try {
+                    foreach ($Printer in $PrinterName) {
+                        $ScriptBlock = {
+                            Start-Process -FilePath rundll32.exe -ArgumentList "printui,PrintUIEntry /q /gd /n$Using:Printer" -Wait
+                        }
+                        if ($PSCmdlet.ShouldProcess($PSSession.ComputerName, "Remove Machine Printer $Printer")) {
+                            Invoke-Command -Session $PSSession -ScriptBlock $ScriptBlock
+                        }
+                    }
+                }
+                catch {
+                    $error[0].InvocationInfo | Select-Object *
+                    $error[0].Exception.Message
+                }
+            }
+        }
     }
-
+    end {
+        if ($PSCmdlet.ParameterSetName -eq 'ComputerName') {
+            Get-MachinePrinter -ComputerName $ComputerName
+        }
+        else {
+            Get-MachinePrinter -Session $Session
+        }
+    }
 }

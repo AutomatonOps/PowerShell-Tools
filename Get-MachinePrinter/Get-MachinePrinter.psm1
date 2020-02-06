@@ -10,88 +10,57 @@ function Get-MachinePrinter {
 
     [cmdletbinding(SupportsShouldProcess)]
     Param(
-        [parameter(ValueFromPipelineByPropertyName)][string[]]$ComputerName = $env:COMPUTERNAME  
+        [parameter(ValueFromPipelineByPropertyName, ParameterSetName = 'ComputerName')][string[]]$ComputerName = $env:COMPUTERNAME,
+
+        [parameter(ValueFromPipelineByPropertyName, ParameterSetName = 'PSSession', Mandatory = $true)][System.Management.Automation.Runspaces.PSSession[]]$Session
     )
 
     
-
-    BEGIN {
-        $Output = [System.Collections.Generic.List[PSObject]]::New()
-    }
-
-    PROCESS {
-        ForEach ($Computer in $ComputerName) {
-            TRY {
-                If ((Test-CIMPing -ComputerName $Computer).Success) {
-
-                    If ((Get-PSSession).ComputerName -notcontains $Computer) {
-                        Write-Verbose -Message "Performing the operation 'New-PSSession' on target $Computer."
-                        New-PSSession -ComputerName $Computer -Name $Computer | Out-Null
-                    }
-
-
-                    $ScriptBlock = {
-                        Get-ChildItem -Path 'Registry::\HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Print\Connections' |
-                        ForEach-Object -Process {
-                            $PrinterName = $_ |
-                            Get-ItemProperty -Name Printer |
+    process {
+        $ScriptBlock = {
+            Get-ChildItem -Path 'Registry::\HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Print\Connections' |
+                ForEach-Object -Process {
+                    $PrinterName = $_ |
+                        Get-ItemProperty -Name Printer |
                             Select-Object -ExpandProperty Printer
 
-                            $Properties = @{
-                                ComputerName = $env:ComputerName
-                                UserName = "Machine"
-                                PrinterName = $PrinterName
-                                Type = "Machine"
-                                Status = "Online"
-                            }
-
-                            New-Object PSObject -Property $Properties
-                        }
+                    $Properties = @{
+                        ComputerName = $env:ComputerName
+                        UserName     = "Machine"
+                        PrinterName  = $PrinterName
+                        Type         = "Machine"
+                        Status       = "Online"
                     }
 
+                    New-Object PSObject -Property $Properties
+                }
+        }
+        if ($PSCmdlet.ParameterSetName -eq 'ComputerName') {
+            foreach ($Computer in $ComputerName) {
+                try {
                     if ($PSCmdlet.ShouldProcess("$Computer", "Get Machine Printer")) {
-                        $Output.Add((Invoke-Command -Session (Get-PSSession -Name $Computer) -ScriptBlock $ScriptBlock)) #-AsJob -JobName $Computer | Out-Null
+                        Invoke-Command -ComputerName $Computer -ScriptBlock $ScriptBlock | ForEach-Object { $_ | Select-Object -Property ComputerName, UserName, PrinterName, Type | Select-Object -Property * -Unique }
+                    }
+
+                }
+                catch {
+                    $error[0].InvocationInfo | Select-Object *
+                    $error[0].Exception.Message
+                }
+            }
+        }
+        else {
+            foreach ($PSSession in $Session) {
+                try {
+                    if ($PSCmdlet.ShouldProcess($PSSession.ComputerName, "Get Machine Printer")) {
+                        Invoke-Command -Session $PSSession -ScriptBlock $ScriptBlock | ForEach-Object { $_ | Select-Object -Property ComputerName, UserName, PrinterName, Type | Select-Object -Property * -Unique }
                     }
                 }
-                # Else {
-                #     $Properties = @{
-                #         ComputerName = $Computer
-                #         UserName = "Machine"
-                #         PrinterName = $null
-                #         Type = "Machine"
-                #         Status = "Offline"
-                #     }
-                #     $Output.Add((New-Object PSCustomObject -Property $Properties))
-                # }
-
-            }
-            CATCH {
-                Write-Host "Error!"# ${$_.Exception.Message}"
-                Write-Output $error[0]
-                $Properties = @{
-                    ComputerName = $Computer
-                    UserName = "Machine"
-                    PrinterName = $null
-                    Type = "Machine"
-                    Status = "Error"
+                catch {
+                    $error[0].InvocationInfo | Select-Object *
+                    $error[0].Exception.Message
                 }
-                $Output.Add((New-Object PSCustomObject -Property $Properties))
-            }
-            FINALLY {
-                #Write-Output $error[0]
             }
         }
     }
-
-    END {
-        ForEach ($Computer in (Get-PSSession | Select-Object -ExpandProperty ComputerName)) {
-            # Write-Verbose -Message "Performing the operation 'Receive-Job -Wait' on target $Computer."
-            # $Output.Add((Get-Job -Name $Computer | Receive-Job -Wait -AutoRemoveJob))
-
-            Write-Verbose -Message "Performing the operation 'Remove-PSSession' on target $Computer."
-            Get-PSSession -Name $Computer -ErrorAction SilentlyContinue | Remove-PSSession
-        }
-        $Output | ForEach-Object { $_ | Select-Object -Property ComputerName, UserName, PrinterName, Type | Select-Object -Property * -Unique }
-    }
-
 }
