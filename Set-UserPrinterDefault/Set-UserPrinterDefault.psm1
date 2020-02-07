@@ -10,40 +10,60 @@ function Set-UserPrinterDefault {
 
     [cmdletbinding(SupportsShouldProcess)]
     Param(
-        [parameter(ValueFromPipelineByPropertyName)][string[]]$ComputerName = $env:COMPUTERNAME,
+        [parameter(ValueFromPipelineByPropertyName, ParameterSetName = 'ComputerName')][string[]]$ComputerName = $env:COMPUTERNAME,
+
+        [parameter(ValueFromPipelineByPropertyName, ParameterSetName = 'PSSession', Mandatory = $true)][System.Management.Automation.Runspaces.PSSession[]]$Session,
 
         [parameter(Mandatory, ValueFromPipelineByPropertyName)][string]$PrinterName,
-
         [parameter(Mandatory, ValueFromPipelineByPropertyName)][string[]]$UserName
     )
     
     process {
-        foreach($Computer in $ComputerName) {
-            try {
-                    Test-Connection -ComputerName $Computer -Count 1 -Quiet -InformationAction Ignore -ErrorAction Stop | Out-Null
-                        foreach($User in $UserName) {
-                            $SID = Get-ADUser -Identity $User | Select-Object -ExpandProperty SID | Select-Object -ExpandProperty Value
-                            if ($PSCmdlet.ShouldProcess("$Computer", "Set default printer $PrinterName for user $User")) {
-                                Invoke-Command -ComputerName $Computer `
-                                                -ScriptBlock {
-                                                    #Get-ItemProperty -Path "Registry::\HKEY_USERS\$Using:SID\Software\Microsoft\Windows NT\CurrentVersion\Windows\" -Name "Device" | Select-Object -ExpandProperty Device
-                                                    Set-ItemProperty -Path "Registry::\HKEY_USERS\$Using:SID\Software\Microsoft\Windows NT\CurrentVersion\Windows" -Name "Device" -Value "$Using:PrinterName,winspool,Ne00:"
-                                                    #Get-ItemProperty -Path "Registry::\HKEY_USERS\$Using:SID\Software\Microsoft\Windows NT\CurrentVersion\Windows\" -Name "Device" | Select-Object -ExpandProperty Device
-                                                } | Out-Null
-                            }
-                                # [PSCustomObject]@{
-                                #     ComputerName = $Computer
-                                #     UserName = $User
-                                #     OldDefaultPrinter = $Result[0]
-                                #     NewDefaultPrinter = $Result[1]
-                                # }
-                                
+        if ($PSCmdlet.ParameterSetName -eq 'ComputerName') {
+            foreach($Computer in $ComputerName) {
+                try {
+                    foreach($User in $UserName) {
+                        $SID = Get-ADUser -Identity $User | Select-Object -ExpandProperty SID | Select-Object -ExpandProperty Value
+                        $ScriptBlock = {
+                            Set-ItemProperty -Path "Registry::\HKEY_USERS\$Using:SID\Software\Microsoft\Windows NT\CurrentVersion\Windows" -Name "Device" -Value "$Using:PrinterName,winspool,Ne00:"
                         }
+                        if ($PSCmdlet.ShouldProcess($Computer, "Set default printer $PrinterName for user $User")) {
+                            Invoke-Command -ComputerName $Computer -ScriptBlock $ScriptBlock
+                        }
+                    }
+                }
+                catch {
+                    $error[0].InvocationInfo | Select-Object *
+                    $error[0].Exception.Message
+                }
             }
-            catch {
-                Write-Warning -Message "Konnte nicht mit $Computer verbinden."
+        }
+        else {
+            foreach($PSSession in $Session) {
+                try {
+                    foreach($User in $UserName) {
+                        $SID = Get-ADUser -Identity $User | Select-Object -ExpandProperty SID | Select-Object -ExpandProperty Value
+                        $ScriptBlock = {
+                            Set-ItemProperty -Path "Registry::\HKEY_USERS\$Using:SID\Software\Microsoft\Windows NT\CurrentVersion\Windows" -Name "Device" -Value "$Using:PrinterName,winspool,Ne00:"
+                        }
+                        if ($PSCmdlet.ShouldProcess($PSSession.ComputerName, "Set default printer $PrinterName for user $User")) {
+                            Invoke-Command -Session $PSSession -ScriptBlock $ScriptBlock
+                        }
+                    }
+                }
+                catch {
+                    $error[0].InvocationInfo | Select-Object *
+                    $error[0].Exception.Message
+                }
             }
         }
     }
-
+    end {
+        if ($PSCmdlet.ParameterSetName -eq 'ComputerName') {
+            Get-UserPrinterDefault -ComputerName $ComputerName
+        }
+        else {
+            Get-UserPrinterDefault -Session $Session
+        }
+    }
 }
