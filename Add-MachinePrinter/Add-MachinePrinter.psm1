@@ -58,10 +58,14 @@ function Add-MachinePrinter {
     }
     end {
         if ($PSCmdlet.ParameterSetName -eq 'ComputerName') {
-            Get-MachinePrinter -ComputerName $ComputerName
+            if ($PSCmdlet.ShouldProcess($ComputerName, "Get Machine Printer")) {
+                Get-MachinePrinter -ComputerName $ComputerName
+            }
         }
         else {
-            Get-MachinePrinter -Session $Session
+            if ($PSCmdlet.ShouldProcess($PSSession.ComputerName, "Get Machine Printer")) {
+                Get-MachinePrinter -Session $Session
+            }
         }
     }
 }
