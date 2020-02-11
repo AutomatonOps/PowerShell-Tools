@@ -20,18 +20,19 @@ function Remove-Session {
 
 
         foreach($Computer in $ComputerName) {
-            $QUser = quser /server:$Computer
             foreach($User in $UserName) {
-                try {
-
-                    $SessionId = (($QUser | Where-Object { $_ -match $User }) -split ' +')[2]
-                    rwinsta $SessionId /server:$Computer
-
+                $ScriptBlock = {
+                    $QUser = quser
+                        try {
+                            $SessionId = (($QUser | Where-Object { $_ -match $Using:User }) -split ' +')[2]
+                            $Result = rwinsta $SessionId
+                        }
+                        catch {
+                            Write-Warning -Message "Something went wrong."
+                            $error[0]
+                        }
                 }
-                catch {
-                    Write-Warning -Message "Something went wrong."
-                    $error[0]
-                }
+                Invoke-Command -ComputerName $Computer -ScriptBlock $ScriptBlock
             }
 
         }
