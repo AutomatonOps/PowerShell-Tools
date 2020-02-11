@@ -39,7 +39,12 @@ function Get-MachinePrinter {
             foreach ($Computer in $ComputerName) {
                 try {
                     if ($PSCmdlet.ShouldProcess("$Computer", "Get Machine Printer")) {
-                        Invoke-Command -ComputerName $Computer -ScriptBlock $ScriptBlock | ForEach-Object { $_ | Select-Object -Property ComputerName, UserName, PrinterName, Type | Select-Object -Property * -Unique }
+                        if ($env:COMPUTERNAME -ne $Computer) {
+                            Invoke-Command -ComputerName $Computer -ScriptBlock $ScriptBlock | ForEach-Object { $_ | Select-Object -Property ComputerName, UserName, PrinterName, Type | Select-Object -Property * -Unique }
+                        }
+                        else {
+                            Invoke-Command -ScriptBlock $ScriptBlock | ForEach-Object { $_ | Select-Object -Property ComputerName, UserName, PrinterName, Type | Select-Object -Property * -Unique }
+                        }
                     }
 
                 }
@@ -53,7 +58,12 @@ function Get-MachinePrinter {
             foreach ($PSSession in $Session) {
                 try {
                     if ($PSCmdlet.ShouldProcess($PSSession.ComputerName, "Get Machine Printer")) {
-                        Invoke-Command -Session $PSSession -ScriptBlock $ScriptBlock | ForEach-Object { $_ | Select-Object -Property ComputerName, UserName, PrinterName, Type | Select-Object -Property * -Unique }
+                        if ($env:COMPUTERNAME -ne $Computer) {
+                            Invoke-Command -Session $PSSession -ScriptBlock $ScriptBlock | ForEach-Object { $_ | Select-Object -Property ComputerName, UserName, PrinterName, Type | Select-Object -Property * -Unique }
+                        }
+                        else {
+                            Invoke-Command -ScriptBlock $ScriptBlock | ForEach-Object { $_ | Select-Object -Property ComputerName, UserName, PrinterName, Type | Select-Object -Property * -Unique }
+                        }
                     }
                 }
                 catch {

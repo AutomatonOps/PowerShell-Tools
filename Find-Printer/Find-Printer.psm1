@@ -25,7 +25,7 @@ function Find-Printer
     )
 
     BEGIN {
-        $Job = Start-Job { Import-Csv \\ATM-IT-RZ1-SV01\c$\AUTOMATION\Jobs\PrinterCollector\PrinterList.csv }
+        $Job = Start-Job { Import-Csv \\ATM-IT-RZ1-SV01\AUTOMATION\Jobs\PrinterCollector\PrinterList.csv }
         $Output = @()
         $Result = $Job | Receive-Job -Wait -AutoRemoveJob
     }

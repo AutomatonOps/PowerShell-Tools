@@ -18,6 +18,7 @@ function Set-UserPrinterDefault {
         [parameter(Mandatory, ValueFromPipelineByPropertyName)][string[]]$UserName
     )
     
+    
     process {
         if ($PSCmdlet.ParameterSetName -eq 'ComputerName') {
             foreach($Computer in $ComputerName) {
@@ -27,7 +28,7 @@ function Set-UserPrinterDefault {
                         $ScriptBlock = {
                             Set-ItemProperty -Path "Registry::\HKEY_USERS\$Using:SID\Software\Microsoft\Windows NT\CurrentVersion\Windows" -Name "Device" -Value "$Using:PrinterName,winspool,Ne00:"
                         }
-                        if ($PSCmdlet.ShouldProcess($Computer, "Set default printer $PrinterName for user $User")) {
+                        if ($PSCmdlet.ShouldProcess($Computer, "Set Default Printer $PrinterName for user $User")) {
                             Invoke-Command -ComputerName $Computer -ScriptBlock $ScriptBlock
                         }
                     }
@@ -46,7 +47,7 @@ function Set-UserPrinterDefault {
                         $ScriptBlock = {
                             Set-ItemProperty -Path "Registry::\HKEY_USERS\$Using:SID\Software\Microsoft\Windows NT\CurrentVersion\Windows" -Name "Device" -Value "$Using:PrinterName,winspool,Ne00:"
                         }
-                        if ($PSCmdlet.ShouldProcess($PSSession.ComputerName, "Set default printer $PrinterName for user $User")) {
+                        if ($PSCmdlet.ShouldProcess($PSSession.ComputerName, "Set Default Printer $PrinterName for user $User")) {
                             Invoke-Command -Session $PSSession -ScriptBlock $ScriptBlock
                         }
                     }
@@ -60,10 +61,14 @@ function Set-UserPrinterDefault {
     }
     end {
         if ($PSCmdlet.ParameterSetName -eq 'ComputerName') {
-            Get-UserPrinterDefault -ComputerName $ComputerName
+            if ($PSCmdlet.ShouldProcess($ComputerName, "Get Default Printer")) {
+                Get-UserPrinterDefault -ComputerName $ComputerName
+            }
         }
         else {
-            Get-UserPrinterDefault -Session $Session
+            if ($PSCmdlet.ShouldProcess($PSSession.ComputerName, "Get Default Printer")) {
+                Get-UserPrinterDefault -Session $Session
+            }
         }
     }
 }
