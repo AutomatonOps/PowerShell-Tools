@@ -67,9 +67,10 @@ function Get-UserPrinter {
                                     PrinterName  = $PrinterName
                                     Type         = "Machine"
                                 }
+                                New-Object PSObject -Property $Properties
                             }
                         }
-                        New-Object PSObject -Property $Properties
+                        
                     }
                 }
             }
