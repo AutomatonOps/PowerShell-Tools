@@ -10,7 +10,7 @@ function Get-MachinePrinter {
 
     [cmdletbinding(SupportsShouldProcess)]
     Param(
-        [parameter(ValueFromPipelineByPropertyName, ParameterSetName = 'ComputerName')][string[]]$ComputerName = $env:COMPUTERNAME,
+        [parameter(ValueFromPipelineByPropertyName, ParameterSetName = 'ComputerName', Position = 0)][string[]]$ComputerName = $env:COMPUTERNAME,
 
         [parameter(ValueFromPipelineByPropertyName, ParameterSetName = 'PSSession', Mandatory = $true)][System.Management.Automation.Runspaces.PSSession[]]$Session
     )
