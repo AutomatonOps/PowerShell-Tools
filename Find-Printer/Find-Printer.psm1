@@ -1,6 +1,5 @@
-function Find-Printer
-{
-<#
+function Find-Printer {
+    <#
     .SYNOPSIS
         Searches the PrinterList.csv for a given printer
 
@@ -24,43 +23,23 @@ function Find-Printer
         [parameter(ValueFromPipelineByPropertyName)][string[]]$PrinterName
     )
 
-    BEGIN {
-        $Job = Start-Job { Import-Csv \\ATM-IT-RZ1-SV01\AUTOMATION\Jobs\PrinterCollector\PrinterList.csv }
-        $Output = @()
-        $Result = $Job | Receive-Job -Wait -AutoRemoveJob
+    begin {
+        $List = Import-Csv -Path '\\ATM-IT-RZ1-SV01\AUTOMATION\Jobs\PrinterCollector\PrinterList.csv'
     }
     
-    PROCESS {   
-        ForEach($Printer in $PrinterName) {
-            TRY {
-                $Output = $Result | Where-Object { $_.Name -like "*$Printer*" }
-            }
-            CATCH {
-                Write-Verbose "Error! ${$_.Exception.Message}"
-                $Properties = @{
-                    PrinterName = $null
-                    DriverName = $null
-                    Location = $null
-                    ComputerName = $null
+    process {
+        foreach ($Printer in $PrinterName) {
+            $Result = $List | Where-Object { $_.Name -like "*$Printer*" }
+
+            foreach ($r in $Result) {
+                if ($r.ComputerName -eq "PRS-FK-RFK-SV01") {
+                    Write-Output -InputObject $r | Select-Object @{n = "PrinterName"; e = { "\\" + $_.ComputerName + ".FACHKLINIK.NET.LOCAL\" + $_.Name } }, DriverName, Location
                 }
-                $Output = New-Object PSObject -Property $Properties
-            }
-            FINALLY {
-                foreach($o in $Output) {
-                    if($o.ComputerName -eq "PRS-FK-RFK-SV01") {
-                        Write-Output -InputObject $o | Select-Object @{n="PrinterName";e={"\\" + $_.ComputerName + ".FACHKLINIK.NET.LOCAL\" + $_.Name}}, DriverName, Location
-                    }
-                    else {
-                        Write-Output -InputObject $o | Select-Object @{n="PrinterName";e={"\\" + $_.ComputerName + ".RNR.NET.LOCAL\" + $_.Name}}, DriverName, Location
-                    }
+                else {
+                    Write-Output -InputObject $r | Select-Object @{n = "PrinterName"; e = { "\\" + $_.ComputerName + ".RNR.NET.LOCAL\" + $_.Name } }, DriverName, Location
                 }
-                
             }
         }
-    }
-
-    END {
-
     }
 }
 
