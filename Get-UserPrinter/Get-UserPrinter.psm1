@@ -99,8 +99,16 @@ function Get-UserPrinter {
         else {
             foreach ($PSSession in $Session) {
                 try {
+                    if ($PSCmdlet.ShouldProcess("$Computer", "Import Registry Hive")) {
+                        Import-RegistryHive -ComputerName $Computer
+                    }
+
                     if ($PSCmdlet.ShouldProcess($PSSession.ComputerName, "Get User Printer")) {
                         Invoke-Command -Session $PSSession -ScriptBlock $ScriptBlock | Select-Object ComputerName, UserName, PrinterName, Type
+                    }
+
+                    if ($PSCmdlet.ShouldProcess("$Computer", "Export Registry Hive")) {
+                        Export-RegistryHive -ComputerName $Computer
                     }
                 }
                 catch {

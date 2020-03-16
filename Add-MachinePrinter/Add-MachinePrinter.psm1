@@ -22,6 +22,19 @@ function Add-MachinePrinter {
         if ($PSCmdlet.ParameterSetName -eq 'ComputerName') {
             foreach ($Computer in $ComputerName) {
                 try {
+                    $ScriptBlock = {
+                        $version = Get-CimInstance -ClassName Win32_OperatingSystem | Select-Object -ExpandProperty Caption
+                        if ($version -like '*Windows 10*') {
+                            #* Disable metadata download from internet to make the printer show up instantly
+                            if (!(Test-Path -Path 'HKLM:\SOFTWARE\Policies\Microsoft\Windows\Device Metadata')) {
+                                New-Item -Path 'HKLM:\SOFTWARE\Policies\Microsoft\Windows\Device Metadata\'
+                            }
+                            Set-ItemProperty -Path 'HKLM:\SOFTWARE\Policies\Microsoft\Windows\Device Metadata\' -PSProperty PreventDeviceMetadataFromNetwork -Value 1 -Force #* 1 == disable metadata downloading
+                            #Get-Service -Name Spooler | Restart-Service -Force
+                        }
+                    }
+                    Invoke-Command -ComputerName $Computer -ScriptBlock $ScriptBlock
+
                     foreach ($Printer in $PrinterName) {
                         $ScriptBlock = {
                             Start-Process -FilePath rundll32.exe -ArgumentList "printui,PrintUIEntry /q /ga /n$Using:Printer" -Wait
@@ -40,6 +53,19 @@ function Add-MachinePrinter {
         else {
             foreach ($PSSession in $Session) {
                 try {
+                    $ScriptBlock = {
+                        $version = Get-CimInstance -ClassName Win32_OperatingSystem | Select-Object -ExpandProperty Caption
+                        if ($version -like '*Windows 10*') {
+                            #* Disable metadata download from internet to make the printer show up instantly
+                            if (!(Test-Path -Path 'HKLM:\SOFTWARE\Policies\Microsoft\Windows\Device Metadata')) {
+                                New-Item -Path 'HKLM:\SOFTWARE\Policies\Microsoft\Windows\Device Metadata\'
+                            }
+                            Set-ItemProperty -Path 'HKLM:\SOFTWARE\Policies\Microsoft\Windows\Device Metadata\' -PSProperty PreventDeviceMetadataFromNetwork -Value 1 -Force #* 1 == disable metadata downloading
+                            #Get-Service -Name Spooler | Restart-Service -Force
+                        }
+                    }
+                    Invoke-Command -Session $PSSession -ScriptBlock $ScriptBlock
+
                     foreach ($Printer in $PrinterName) {
                         $ScriptBlock = {
                             Start-Process -FilePath rundll32.exe -ArgumentList "printui,PrintUIEntry /q /ga /n$Using:Printer" -Wait
@@ -60,11 +86,34 @@ function Add-MachinePrinter {
         if ($PSCmdlet.ParameterSetName -eq 'ComputerName') {
             if ($PSCmdlet.ShouldProcess($ComputerName, "Get Machine Printer")) {
                 Get-MachinePrinter -ComputerName $ComputerName
+                # Invoke-Command -ComputerName $Computer -ScriptBlock {
+                #     Get-Service -Name Spooler | Restart-Service -Force
+                # }  
+                # $ScriptBlock = {
+                #     $version = Get-CimInstance -ClassName Win32_OperatingSystem | Select-Object -ExpandProperty Caption
+                #     if ($version -like '*Windows 10*') {
+                #         Set-ItemProperty -Path 'HKLM:\SOFTWARE\Policies\Microsoft\Windows\Device Metadata\' -PSProperty PreventDeviceMetadataFromNetwork -Value 0 -Force #* 0 == enable metadata downloading
+                #         #Get-Service -Name Spooler | Restart-Service -Force
+                #     }
+                # }
+                # Invoke-Command -ComputerName $Computer -ScriptBlock $ScriptBlock
             }
         }
         else {
             if ($PSCmdlet.ShouldProcess($PSSession.ComputerName, "Get Machine Printer")) {
                 Get-MachinePrinter -Session $Session
+                # Invoke-Command -Session $Session -ScriptBlock {
+                #     Get-Service -Name Spooler | Restart-Service -Force
+                # }
+                # $ScriptBlock = {
+                #     $version = Get-CimInstance -ClassName Win32_OperatingSystem | Select-Object -ExpandProperty Caption
+                #     if ($version -like '*Windows 10*') {
+                #         Set-ItemProperty -Path 'HKLM:\SOFTWARE\Policies\Microsoft\Windows\Device Metadata\' -PSProperty PreventDeviceMetadataFromNetwork -Value 0 -Force #* 0 == enable metadata downloading
+                #         #Get-Service -Name Spooler | Restart-Service -Force
+                #     }
+                # }
+                # Invoke-Command -Session $PSSession -ScriptBlock $ScriptBlock
+
             }
         }
     }
