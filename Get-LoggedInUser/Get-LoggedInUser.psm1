@@ -40,7 +40,7 @@ function Get-LoggedInUser
 
     ForEach ($computer in $ComputerName)
     {
-        try { if (-not (Test-Connection -ComputerName $computer -Quiet -Count 1 -ErrorAction Stop)) { Write-Warning "Can't connect to $computer"; continue } }
+        try { if (-not (Test-Connection -ComputerName $computer -Quiet -Count 1 -ErrorAction Stop)) { } }#Write-Warning "Can't connect to $computer"; continue } }
         catch { Write-Warning "Can't test connect to $computer"; continue }
 
         #fix quser error: https://www.adilhindistan.com/2014/01/fixing-quser-access-is-denied-error.html
@@ -64,7 +64,7 @@ BENUTZERNAME          SITZUNGSNAME       ID  STATUS  LEERLAUF   ANMELDEZEIT
 '@
         
         
-        $users = $quserOut | ConvertFrom-String -TemplateContent $Template #| Select-Object -ExpandProperty User
+        $users = $quserOut | ConvertFrom-String -TemplateContent $Template -ErrorAction SilentlyContinue #| Select-Object -ExpandProperty User
 
         $out += $users
     }
