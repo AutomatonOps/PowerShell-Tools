@@ -31,44 +31,30 @@ function Get-MachinePrinter {
                         Type         = "Machine"
                         Status       = "Online"
                     }
-
                     New-Object PSObject -Property $Properties
                 }
         }
         if ($PSCmdlet.ParameterSetName -eq 'ComputerName') {
             foreach ($Computer in $ComputerName) {
-                try {
-                    if ($PSCmdlet.ShouldProcess("$Computer", "Get Machine Printer")) {
-                        if ($env:COMPUTERNAME -ne $Computer) {
-                            Invoke-Command -ComputerName $Computer -ScriptBlock $ScriptBlock | ForEach-Object { $_ | Select-Object -Property ComputerName, UserName, PrinterName, Type | Select-Object -Property * -Unique }
-                        }
-                        else {
-                            Invoke-Command -ScriptBlock $ScriptBlock | ForEach-Object { $_ | Select-Object -Property ComputerName, UserName, PrinterName, Type | Select-Object -Property * -Unique }
-                        }
+                if ($PSCmdlet.ShouldProcess("$Computer", "Get Machine Printer")) {
+                    if ($env:COMPUTERNAME -ne $Computer) {
+                        Invoke-Command -ComputerName $Computer -ScriptBlock $ScriptBlock -ErrorAction Stop | ForEach-Object { $_ | Select-Object -Property ComputerName, UserName, PrinterName, Type | Select-Object -Property * -Unique }
                     }
-
-                }
-                catch {
-                    $error[0].InvocationInfo | Select-Object *
-                    $error[0].Exception.Message
+                    else {
+                        Invoke-Command -ScriptBlock $ScriptBlock -ErrorAction Stop | ForEach-Object { $_ | Select-Object -Property ComputerName, UserName, PrinterName, Type | Select-Object -Property * -Unique }
+                    }
                 }
             }
         }
         else {
             foreach ($PSSession in $Session) {
-                try {
-                    if ($PSCmdlet.ShouldProcess($PSSession.ComputerName, "Get Machine Printer")) {
-                        if ($env:COMPUTERNAME -ne $Computer) {
-                            Invoke-Command -Session $PSSession -ScriptBlock $ScriptBlock | ForEach-Object { $_ | Select-Object -Property ComputerName, UserName, PrinterName, Type | Select-Object -Property * -Unique }
-                        }
-                        else {
-                            Invoke-Command -ScriptBlock $ScriptBlock | ForEach-Object { $_ | Select-Object -Property ComputerName, UserName, PrinterName, Type | Select-Object -Property * -Unique }
-                        }
+                if ($PSCmdlet.ShouldProcess($PSSession.ComputerName, "Get Machine Printer")) {
+                    if ($env:COMPUTERNAME -ne $Computer) {
+                        Invoke-Command -Session $PSSession -ScriptBlock $ScriptBlock -ErrorAction Stop | ForEach-Object { $_ | Select-Object -Property ComputerName, UserName, PrinterName, Type | Select-Object -Property * -Unique }
                     }
-                }
-                catch {
-                    $error[0].InvocationInfo | Select-Object *
-                    $error[0].Exception.Message
+                    else {
+                        Invoke-Command -ScriptBlock $ScriptBlock -ErrorAction Stop | ForEach-Object { $_ | Select-Object -Property ComputerName, UserName, PrinterName, Type | Select-Object -Property * -Unique }
+                    }
                 }
             }
         }
